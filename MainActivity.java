@@ -1,27 +1,30 @@
 package com.appymitchpenney.hiremitch;
 
+import android.content.Intent;
 import android.net.http.HttpResponseCache;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
-
-import org.w3c.dom.Text;
+import android.view.View;
+import android.widget.Button;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+
 public class MainActivity extends AppCompatActivity {
-    public static TextView txtWorld;
+    Button btnGetEvents, btnPostEvent, btnDeleteEvent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        txtWorld = (TextView) findViewById(R.id.txtWorld);
+        btnGetEvents = (Button) findViewById(R.id.btnGetEvents);
+        btnPostEvent = (Button) findViewById(R.id.btnPostEvent);
+        btnDeleteEvent = (Button) findViewById(R.id.btnDeleteEvent);
 
         try {
             File httpCacheDir = new File(this.getCacheDir(), "http");
@@ -41,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e("ERROR","URL was invalid!");
             this.finish();
         }
-
     }
 
     @Override
@@ -53,5 +55,10 @@ public class MainActivity extends AppCompatActivity {
             cache.flush();
             Log.i("INF","Cache flushed!");
         }
+    }
+
+    public void getEvents(View view) {
+        Intent i = new Intent(this,GetEventsActivity.class);
+        startActivity(i);
     }
 }

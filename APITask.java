@@ -21,13 +21,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 public class APITask extends AsyncTask {
+    public static HashSet events = new HashSet();
     private final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
-    private final int UNPROCESSABLE_ENTITY = 422;
-    private HashSet jsons = new HashSet();
+    //private final int UNPROCESSABLE_ENTITY = 422;
 
     @Override
     protected Object doInBackground(Object[] objects) {
@@ -57,17 +55,15 @@ public class APITask extends AsyncTask {
                     }
                 }
 
-                if (con.getResponseCode() == UNPROCESSABLE_ENTITY) {
-                    throw new IOException();
-                } else if (con.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                    throw new IOException();
+                if (con.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    throw new IOException("HTTP_NOT_OK");
                 } else {
                     Log.i("INF","Reading from HttpConnection!");
                     return readData(con.getInputStream());
                 }
             } catch(IOException e) {
-                e.printStackTrace();
-                Log.e("ERR","HTTP Response was NOT OK!");
+                Log.e("EXCEPTION",e.getMessage());
+                return e.getMessage();
             } finally {
                 if (con != null) {
                     con.disconnect();
@@ -81,39 +77,43 @@ public class APITask extends AsyncTask {
     protected void onPostExecute(Object o) {
         super.onPostExecute(o);
 
-        if (o != null) {
-            try {
-                JSONArray arr = new JSONArray(o.toString());
+        if(o != null) {
+            /*if (o.getClass() == String.class) {
+                //ADD SOMETHING HERE
+                Log.i("INF",o.toString());
+            } else {*/
+                try {
+                    JSONArray arr = new JSONArray(o.toString());
 
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONObject obj = arr.getJSONObject(i);
-                    HashMap<String, String> map = new HashMap<>();
+                    for (int i = 0; i < arr.length(); i++) {
+                        JSONObject obj = arr.getJSONObject(i);
+                        HashMap<String, String> map = new HashMap<>();
 
-                    Date created = FORMAT.parse(obj.getString("created_at"));
-                    Date updated = FORMAT.parse(obj.getString("updated_at"));
+                        Date created = FORMAT.parse(obj.getString("created_at"));
+                        Date updated = FORMAT.parse(obj.getString("updated_at"));
 
-                    map.put("id", obj.getString("id"));
-                    map.put("name", obj.getString("name"));
-                    map.put("start", obj.getString("start"));
-                    map.put("end", obj.getString("end"));
-                    map.put("created_at", new Timestamp(created.getTime()).toString());
-                    map.put("updated_at", new Timestamp(updated.getTime()).toString());
+                        map.put("id", obj.getString("id"));
+                        map.put("name", obj.getString("name"));
+                        map.put("start", obj.getString("start"));
+                        map.put("end", obj.getString("end"));
+                        map.put("created_at", new Timestamp(created.getTime()).toString());
+                        map.put("updated_at", new Timestamp(updated.getTime()).toString());
 
-                    jsons.add(map);
-                    Log.i("DATA", obj.getString("id"));
+                        events.add(map);
+                        Log.i("DATA", obj.getString("id"));
+                    }
+
+                } catch (JSONException | ParseException e) {
+                    e.printStackTrace();
+                    Log.e("ERROR", "JSON conversion failed!");
                 }
-            } catch (JSONException | ParseException e) {
-                e.printStackTrace();
-                Log.e("ERROR", "JSON conversion failed!");
-            }
-
-            MainActivity.txtWorld.setText(jsons.toString());
+            //}
         }
     }
 
     private String readData(InputStream in) {
         StringBuilder result = new StringBuilder();
-        int current = 0;
+        int current;
 
         try {
             current = in.read();
@@ -152,3 +152,6 @@ public class APITask extends AsyncTask {
         }
         }
         }*/
+
+/* if (con.getResponseCode() == UNPROCESSABLE_ENTITY) {
+throw new IOException("HTTP_UNPROCESSABLE_ENTITY");*/
