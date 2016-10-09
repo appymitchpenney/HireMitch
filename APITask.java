@@ -8,10 +8,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.CacheResponse;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -22,15 +25,23 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 public class APITask extends AsyncTask {
     public static HashSet events = new HashSet();
     private final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
+    private static URL url;
+    private static URI uri;
     //private final int UNPROCESSABLE_ENTITY = 422;
 
     @Override
     protected Object doInBackground(Object[] objects) {
-        URL url = (URL) objects[0];
-        URI uri = null;
+        url = (URL) objects[0];
+        uri = null;
         HttpURLConnection con = null;
         CacheResponse cache;
 
@@ -132,6 +143,104 @@ public class APITask extends AsyncTask {
 
         return null;
     }
+
+    public static void doDelete(String id) {
+
+        try {
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("DELETE");
+            con.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            con.setRequestProperty("id",id);
+            con.setUseCaches(false);
+            con.setDoInput(true);
+            con.setDoOutput(true);
+            Log.i("INF",String.valueOf(con.getResponseCode()));
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+        /*con.connect();
+        OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
+        wr.write(data); // data is the post data to send
+        wr.flush();*/
+
+
+    }
+
+    public static void doAdd(JSONObject obj) {
+
+        MediaType JSON
+                = MediaType.parse("application/json; charset=utf-8");
+
+        OkHttpClient client = new OkHttpClient();
+
+
+            RequestBody body = RequestBody.create(JSON, obj.toString());
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .build();
+        try {
+            Response response = client.newCall(request).execute();
+            Log.i("INF",response.message());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
+            /*HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+            con.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            con.setRequestProperty("name",obj.getString("name"));
+            con.setRequestProperty("start","2010-10-12 10:45:00");
+            con.setRequestProperty("end","2010-10-13 10:46:00");
+            con.setUseCaches(false);
+            //con.setDoInput(true);
+            //con.setDoOutput(true);
+            Log.i("INF",String.valueOf(con.getResponseCode()));
+            InputStream is = con.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            String line;
+            StringBuffer response = new StringBuffer();
+            while((line = rd.readLine()) != null) {
+                response.append(line);
+                response.append('\r');
+            }
+            rd.close();
+            Log.i("RESP",line);
+
+            is = con.getErrorStream();
+            rd = new BufferedReader(new InputStreamReader(is));
+            line = null;
+            response = new StringBuffer();
+            while((line = rd.readLine()) != null) {
+                response.append(line);
+                response.append('\r');
+            }
+            rd.close();
+            Log.e("ERR",line);
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }*/
+
+
+
+        /*con.connect();
+        OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
+        wr.write(data); // data is the post data to send
+        wr.flush();*/
+
+
+    }
 }
 
 //Long expires = con.getHeaderFieldDate("Expires",System.currentTimeMillis());
@@ -155,3 +264,47 @@ public class APITask extends AsyncTask {
 
 /* if (con.getResponseCode() == UNPROCESSABLE_ENTITY) {
 throw new IOException("HTTP_UNPROCESSABLE_ENTITY");*/
+
+
+/*
+HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setDoOutput(true);
+        con.setDoInput(true);
+        con.setRequestProperty("Content-Type", "application/json");
+        con.setRequestProperty("Accept", "application/json");
+        con.setRequestMethod("POST");
+
+        JSONObject cred   = new JSONObject();
+        JSONObject auth   = new JSONObject();
+        JSONObject parent = new JSONObject();
+
+        cred.put("username","adm");
+        cred.put("password", "pwd");
+
+        auth.put("tenantName", "adm");
+        auth.put("passwordCredentials", cred.toString());
+
+        parent.put("auth", auth.toString());
+
+        OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
+        wr.write(parent.toString());
+        wr.flush();
+
+//display what returns the POST request
+
+        StringBuilder sb = new StringBuilder();
+        int HttpResult = con.getResponseCode();
+        if (HttpResult == HttpURLConnection.HTTP_OK) {
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(con.getInputStream(), "utf-8"));
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                sb.append(line + "\n");
+            }
+            br.close();
+            System.out.println("" + sb.toString());
+        } else {
+            System.out.println(con.getResponseMessage());
+        }
+
+*/
