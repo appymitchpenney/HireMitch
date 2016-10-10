@@ -19,10 +19,10 @@ import java.util.Locale;
 public class NewEventActivity extends AppCompatActivity {
     private EditText txtName;
     private TextView viewStartDate,viewStartTime, viewEndDate, viewEndTime;
-    private Button btnStartDate, btnEndDate;
+    private Button btnStartDate, btnEndDate, btnStartTime, btnEndTime;
 
-    private DatePickerDialog fromDatePickerDialog;
-    private DatePickerDialog toDatePickerDialog;
+    private DatePickerDialog fromDatePickerDialog, toDatePickerDialog;
+    private TimePickerDialog fromTimePickerDialog, toTimePickerDialog;
     private SimpleDateFormat dateFormatter;
 
 
@@ -38,34 +38,45 @@ public class NewEventActivity extends AppCompatActivity {
         viewEndTime = (TextView) findViewById(R.id.viewEndTime);
         btnStartDate = (Button) findViewById(R.id.btnStartDate);
         btnEndDate = (Button) findViewById(R.id.btnEndDate);
+        btnStartTime = (Button) findViewById(R.id.btnStartTime);
+        btnEndTime = (Button) findViewById(R.id.btnEndTime);
 
         dateFormatter = new SimpleDateFormat("dd-MM-yyyy", Locale.UK);
 
-        setDateTimeField();
+        setDateTimePickers();
     }
 
-    private void setDateTimeField() {
+    private void setDateTimePickers() {
         Calendar newCalendar = Calendar.getInstance();
         fromDatePickerDialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
-
             public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                 Calendar newDate = Calendar.getInstance();
                 newDate.set(year, monthOfYear, dayOfMonth);
                 viewStartDate.setText(dateFormatter.format(newDate.getTime()));
             }
-
         },newCalendar.get(Calendar.YEAR), newCalendar.get(Calendar.MONTH), newCalendar.get(Calendar.DAY_OF_MONTH));
 
         toDatePickerDialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
-
             public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                 Calendar newDate = Calendar.getInstance();
                 newDate.set(year, monthOfYear, dayOfMonth);
                 viewEndDate.setText(dateFormatter.format(newDate.getTime()));
             }
-
         },newCalendar.get(Calendar.YEAR), newCalendar.get(Calendar.MONTH), newCalendar.get(Calendar.DAY_OF_MONTH));
 
+        fromTimePickerDialog = new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker timePicker, int selectedHour, int selectedMinute) {
+                viewStartTime.setText(selectedHour + ":" + selectedMinute);
+            }
+        }, newCalendar.get(Calendar.HOUR_OF_DAY), newCalendar.get(Calendar.MINUTE), true);
+
+        toTimePickerDialog = new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker timePicker, int selectedHour, int selectedMinute) {
+                viewEndTime.setText(selectedHour + ":" + selectedMinute);
+            }
+        }, newCalendar.get(Calendar.HOUR_OF_DAY), newCalendar.get(Calendar.MINUTE), true);
     }
 
     public void addNew(View view) {
@@ -90,6 +101,14 @@ public class NewEventActivity extends AppCompatActivity {
             fromDatePickerDialog.show();
         } else if (view == btnEndDate) {
             toDatePickerDialog.show();
+        }
+    }
+
+    public void changeTime(View view) {
+        if(view == btnStartTime) {
+            fromTimePickerDialog.show();
+        } else if (view == btnEndTime) {
+            toTimePickerDialog.show();
         }
     }
 }
