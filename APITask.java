@@ -8,10 +8,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.CacheResponse;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
@@ -33,10 +31,9 @@ import okhttp3.Response;
 
 public class APITask extends AsyncTask {
     public static HashSet events = new HashSet();
-    private final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
     private static URL url;
     private static URI uri;
-    //private final int UNPROCESSABLE_ENTITY = 422;
+    private final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
 
     @Override
     protected Object doInBackground(Object[] objects) {
@@ -56,27 +53,22 @@ public class APITask extends AsyncTask {
             try {
                 con = (HttpURLConnection) url.openConnection();
                 con.setUseCaches(true);
-                con.addRequestProperty("Cache-Control", "max-age=0");
+                cache = HttpResponseCache.getInstalled().get(uri, "GET", con.getRequestProperties());
+                con.connect();
 
-                if(HttpResponseCache.getInstalled() != null) {
-                    cache = HttpResponseCache.getInstalled().get(uri, "GET", con.getRequestProperties());
-
-                    if (cache != null) {
-                        Log.i("INF","Reading from cache!");
-                        //HttpResponseCache.getInstalled().put(uri,con);
-                        return readData(cache.getBody());
+                if (con.getHeaderField("X-Android-Response-Source").equalsIgnoreCase("CONDITIONAL_CACHE 304")) {
+                    if(HttpResponseCache.getInstalled() != null) {
+                        if (cache != null) {
+                            Log.i("INF", "Reading from cache!");
+                            return readData(cache.getBody());
+                        }
                     }
-                }
-
-                if (con.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                    throw new IOException("HTTP_NOT_OK");
                 } else {
-                    //Log.i("INF","Reading from HttpConnection!");
+                    Log.i("INF","Reading from HttpConnection!");
                     return readData(con.getInputStream());
                 }
             } catch(IOException e) {
-                Log.e("EXCEPTION",e.getMessage());
-                return e.getMessage();
+                Log.e("DATA_READ",e.getMessage());
             } finally {
                 if (con != null) {
                     con.disconnect();
@@ -91,36 +83,28 @@ public class APITask extends AsyncTask {
         super.onPostExecute(o);
 
         if(o != null) {
-            /*if (o.getClass() == String.class) {
-                //ADD SOMETHING HERE
-                Log.i("INF",o.toString());
-            } else {*/
-                try {
-                    JSONArray arr = new JSONArray(o.toString());
+            try {
+                JSONArray arr = new JSONArray(o.toString());
 
-                    for (int i = 0; i < arr.length(); i++) {
-                        JSONObject obj = arr.getJSONObject(i);
-                        HashMap<String, String> map = new HashMap<>();
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject obj = arr.getJSONObject(i);
+                    HashMap<String, String> map = new HashMap<>();
 
-                        Date created = FORMAT.parse(obj.getString("created_at"));
-                        Date updated = FORMAT.parse(obj.getString("updated_at"));
+                    Date created = FORMAT.parse(obj.getString("created_at"));
+                    Date updated = FORMAT.parse(obj.getString("updated_at"));
 
-                        map.put("id", obj.getString("id"));
-                        map.put("name", obj.getString("name"));
-                        map.put("start", obj.getString("start"));
-                        map.put("end", obj.getString("end"));
-                        map.put("created_at", new Timestamp(created.getTime()).toString());
-                        map.put("updated_at", new Timestamp(updated.getTime()).toString());
+                    map.put("id", obj.getString("id"));
+                    map.put("name", obj.getString("name"));
+                    map.put("start", obj.getString("start"));
+                    map.put("end", obj.getString("end"));
+                    map.put("created_at", new Timestamp(created.getTime()).toString());
+                    map.put("updated_at", new Timestamp(updated.getTime()).toString());
 
-                        events.add(map);
-                        Log.i("DATA", obj.getString("id"));
-                    }
-
-                } catch (JSONException | ParseException e) {
-                    e.printStackTrace();
-                    Log.e("ERROR", "JSON conversion failed!");
+                    events.add(map);
                 }
-            //}
+            } catch (JSONException | ParseException e) {
+                Log.e("JSON", "JSON conversion failed!");
+            }
         }
     }
 
@@ -139,7 +123,6 @@ public class APITask extends AsyncTask {
 
             return result.toString();
         } catch (IOException e) {
-            e.printStackTrace();
             Log.e("ERR","Data read failed!");
         }
 
@@ -147,11 +130,9 @@ public class APITask extends AsyncTask {
     }
 
     public static void doDelete(String id) {
-
         try {
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("DELETE");
-            con.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             con.setRequestProperty("id",id);
             con.setUseCaches(false);
             con.setDoInput(true);
@@ -162,15 +143,6 @@ public class APITask extends AsyncTask {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-
-        /*con.connect();
-        OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
-        wr.write(data); // data is the post data to send
-        wr.flush();*/
-
-
     }
 
     public static void doAdd(JSONObject obj) {
