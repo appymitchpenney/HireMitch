@@ -16,7 +16,6 @@ import java.net.URL;
 
 
 public class MainActivity extends AppCompatActivity {
-    Button btnGetEvents, btnPostEvent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,9 +24,6 @@ public class MainActivity extends AppCompatActivity {
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
-
-        btnGetEvents = (Button) findViewById(R.id.btnGetEvents);
-        btnPostEvent = (Button) findViewById(R.id.btnPostEvent);
 
         try {
             File httpCacheDir = new File(this.getCacheDir(), "http");
@@ -62,6 +58,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void getEvents(View view) {
         Intent i = new Intent(this,GetEventsActivity.class);
+        startActivity(i);
+    }
+    public void postEvent(View view) {
+        Intent i = new Intent(this,NewEventActivity.class);
         startActivity(i);
     }
 }

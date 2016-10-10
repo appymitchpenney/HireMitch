@@ -56,12 +56,14 @@ public class APITask extends AsyncTask {
             try {
                 con = (HttpURLConnection) url.openConnection();
                 con.setUseCaches(true);
+                con.addRequestProperty("Cache-Control", "max-age=0");
 
                 if(HttpResponseCache.getInstalled() != null) {
                     cache = HttpResponseCache.getInstalled().get(uri, "GET", con.getRequestProperties());
 
                     if (cache != null) {
                         Log.i("INF","Reading from cache!");
+                        //HttpResponseCache.getInstalled().put(uri,con);
                         return readData(cache.getBody());
                     }
                 }
@@ -69,7 +71,7 @@ public class APITask extends AsyncTask {
                 if (con.getResponseCode() != HttpURLConnection.HTTP_OK) {
                     throw new IOException("HTTP_NOT_OK");
                 } else {
-                    Log.i("INF","Reading from HttpConnection!");
+                    //Log.i("INF","Reading from HttpConnection!");
                     return readData(con.getInputStream());
                 }
             } catch(IOException e) {
@@ -173,17 +175,13 @@ public class APITask extends AsyncTask {
 
     public static void doAdd(JSONObject obj) {
 
-        MediaType JSON
-                = MediaType.parse("application/json; charset=utf-8");
-
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
         OkHttpClient client = new OkHttpClient();
-
-
-            RequestBody body = RequestBody.create(JSON, obj.toString());
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .build();
+        RequestBody body = RequestBody.create(JSON, obj.toString());
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
         try {
             Response response = client.newCall(request).execute();
             Log.i("INF",response.message());

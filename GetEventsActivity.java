@@ -9,11 +9,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,17 +33,7 @@ public class GetEventsActivity extends AppCompatActivity {
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                                JSONObject obj = new JSONObject();
-                                Timestamp startTime = new Timestamp(System.currentTimeMillis());
-                                Timestamp endTime = new Timestamp(startTime.getTime() + 1000000);
-                                try {
-                                    obj.put("name","TEST_NAME");
-                                    obj.put("start","2010-10-11 10:45:00");
-                                    obj.put("end","2010-10-12 10:46:00");
-                                    APITask.doAdd(obj);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
+
                             }})
                         .setNegativeButton("No", null).show();
             }
