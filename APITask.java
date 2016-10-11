@@ -19,9 +19,12 @@ import java.net.URL;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -30,7 +33,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class APITask extends AsyncTask {
-    public static HashSet events = new HashSet();
+    public static List<JSONObject> events = new ArrayList<JSONObject>();
     private static URL url;
     private static URI uri;
     private final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
@@ -88,21 +91,16 @@ public class APITask extends AsyncTask {
 
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject obj = arr.getJSONObject(i);
-                    HashMap<String, String> map = new HashMap<>();
 
-                    Date created = FORMAT.parse(obj.getString("created_at"));
+                    /*Date created = FORMAT.parse(obj.getString("created_at"));
                     Date updated = FORMAT.parse(obj.getString("updated_at"));
 
-                    map.put("id", obj.getString("id"));
-                    map.put("name", obj.getString("name"));
-                    map.put("start", obj.getString("start"));
-                    map.put("end", obj.getString("end"));
-                    map.put("created_at", new Timestamp(created.getTime()).toString());
-                    map.put("updated_at", new Timestamp(updated.getTime()).toString());
+                    obj.put("created_at", new Timestamp(created.getTime()).toString());
+                    obj.put("updated_at", new Timestamp(updated.getTime()).toString());*/
 
-                    events.add(map);
+                    events.add(obj);
                 }
-            } catch (JSONException | ParseException e) {
+            } catch (JSONException e) {
                 Log.e("JSON", "JSON conversion failed!");
             }
         }
@@ -120,7 +118,6 @@ public class APITask extends AsyncTask {
                 result.append(letter);
                 current = in.read();
             }
-
             return result.toString();
         } catch (IOException e) {
             Log.e("ERR","Data read failed!");
@@ -129,152 +126,50 @@ public class APITask extends AsyncTask {
         return null;
     }
 
-    public static void doDelete(String id) {
+    public static boolean doDelete(JSONObject obj) {
+        MediaType JSON = MediaType.parse("application/json");
+        OkHttpClient client = new OkHttpClient();
+
+        Log.i("DATA",obj.toString());
+        Response response = null;
+
         try {
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("DELETE");
-            con.setRequestProperty("id",id);
-            con.setUseCaches(false);
-            con.setDoInput(true);
-            con.setDoOutput(true);
-            Log.i("INF",String.valueOf(con.getResponseCode()));
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+            RequestBody body = RequestBody.create(JSON, obj.toString());
+            Request request = new Request.Builder()
+                    .url(new URL(url + "/" + obj.get("id").toString()))
+                    .delete()
+                    .build();
+            response = client.newCall(request).execute();
+            Log.i("INF",response.message());
+            Log.i("INF",String.valueOf(response.code()));
+            response.close();
+            return true;
+        } catch (IOException|JSONException e) {
             e.printStackTrace();
         }
+
+        return false;
     }
 
-    public static void doAdd(JSONObject obj) {
+    public static boolean doAdd(JSONObject obj) {
 
         MediaType JSON = MediaType.parse("application/json; charset=utf-8");
         OkHttpClient client = new OkHttpClient();
         RequestBody body = RequestBody.create(JSON, obj.toString());
+        Response response = null;
         Request request = new Request.Builder()
                 .url(url)
                 .post(body)
                 .build();
         try {
-            Response response = client.newCall(request).execute();
+            response = client.newCall(request).execute();
             Log.i("INF",response.message());
+            response.close();
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-
-
-            /*HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            con.setRequestProperty("name",obj.getString("name"));
-            con.setRequestProperty("start","2010-10-12 10:45:00");
-            con.setRequestProperty("end","2010-10-13 10:46:00");
-            con.setUseCaches(false);
-            //con.setDoInput(true);
-            //con.setDoOutput(true);
-            Log.i("INF",String.valueOf(con.getResponseCode()));
-            InputStream is = con.getInputStream();
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-            String line;
-            StringBuffer response = new StringBuffer();
-            while((line = rd.readLine()) != null) {
-                response.append(line);
-                response.append('\r');
-            }
-            rd.close();
-            Log.i("RESP",line);
-
-            is = con.getErrorStream();
-            rd = new BufferedReader(new InputStreamReader(is));
-            line = null;
-            response = new StringBuffer();
-            while((line = rd.readLine()) != null) {
-                response.append(line);
-                response.append('\r');
-            }
-            rd.close();
-            Log.e("ERR",line);
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }*/
-
-
-
-        /*con.connect();
-        OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
-        wr.write(data); // data is the post data to send
-        wr.flush();*/
-
-
+        return false;
     }
 }
-
-//Long expires = con.getHeaderFieldDate("Expires",System.currentTimeMillis());
-//con.setUseCaches(true);
-
-/*if(HttpResponseCache.getInstalled() != null) {
-        cache = HttpResponseCache.getInstalled().get(uri,"GET",con.getRequestProperties());
-        if (cache != null) {
-        Map<String,List<String>> headers = cache.getHeaders();
-        if (headers.containsKey("Last-Modified")) {
-        List<String> modifyList = headers.get("Last-Modified");
-        if (modifyList != null && !modifyList.isEmpty()) {
-        String modified = modifyList.get(0);
-        if (modified != null) {
-        con.addRequestProperty("If-Modified-Since",modified);
-        }
-        }
-        }
-        }
-        }*/
-
-/* if (con.getResponseCode() == UNPROCESSABLE_ENTITY) {
-throw new IOException("HTTP_UNPROCESSABLE_ENTITY");*/
-
-
-/*
-HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setDoOutput(true);
-        con.setDoInput(true);
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("Accept", "application/json");
-        con.setRequestMethod("POST");
-
-        JSONObject cred   = new JSONObject();
-        JSONObject auth   = new JSONObject();
-        JSONObject parent = new JSONObject();
-
-        cred.put("username","adm");
-        cred.put("password", "pwd");
-
-        auth.put("tenantName", "adm");
-        auth.put("passwordCredentials", cred.toString());
-
-        parent.put("auth", auth.toString());
-
-        OutputStreamWriter wr = new OutputStreamWriter(con.getOutputStream());
-        wr.write(parent.toString());
-        wr.flush();
-
-//display what returns the POST request
-
-        StringBuilder sb = new StringBuilder();
-        int HttpResult = con.getResponseCode();
-        if (HttpResult == HttpURLConnection.HTTP_OK) {
-            BufferedReader br = new BufferedReader(
-                    new InputStreamReader(con.getInputStream(), "utf-8"));
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                sb.append(line + "\n");
-            }
-            br.close();
-            System.out.println("" + sb.toString());
-        } else {
-            System.out.println(con.getResponseMessage());
-        }
-
-*/

@@ -127,7 +127,9 @@ public class NewEventActivity extends AppCompatActivity {
                 obj.put("name", txtName.getText().toString());
                 obj.put("start", viewStartDate.getText().toString() + " " + viewStartTime.getText().toString() + ":00");
                 obj.put("end", viewEndDate.getText().toString() + " " + viewEndTime.getText().toString() + ":00");
-                APITask.doAdd(obj);
+                if(APITask.doAdd(obj)) {
+                    Toast.makeText(this, "Event added successfully!",Toast.LENGTH_SHORT).show();
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
