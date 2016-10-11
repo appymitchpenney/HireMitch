@@ -15,6 +15,7 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -127,8 +128,13 @@ public class NewEventActivity extends AppCompatActivity {
                 obj.put("name", txtName.getText().toString());
                 obj.put("start", viewStartDate.getText().toString() + " " + viewStartTime.getText().toString() + ":00");
                 obj.put("end", viewEndDate.getText().toString() + " " + viewEndTime.getText().toString() + ":00");
-                if(APITask.doAdd(obj)) {
-                    Toast.makeText(this, "Event added successfully!",Toast.LENGTH_SHORT).show();
+                int result = APITask.doAdd(obj);
+                if(result == 0) {
+                    Toast.makeText(this, "Event added successfully!", Toast.LENGTH_SHORT).show();
+                } else if (result == 1) {
+                    Toast.makeText(this, "The start of the event cannot be after the end of the event!", Toast.LENGTH_SHORT).show();
+                } else if (result == 2) {
+                    Toast.makeText(this, "The server cannot be reached. Please try again later...", Toast.LENGTH_SHORT).show();
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

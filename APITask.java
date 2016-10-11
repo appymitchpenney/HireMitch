@@ -3,6 +3,7 @@ package com.appymitchpenney.hiremitch;
 import android.net.http.HttpResponseCache;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,20 +13,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.CacheResponse;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -33,17 +28,19 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class APITask extends AsyncTask {
-    public static List<JSONObject> events = new ArrayList<JSONObject>();
+    public static List<JSONObject> events = new ArrayList<>();
+    public static List<JSONObject> list = new ArrayList<>();
+    public static ArrayAdapter adapter = null;
+
     private static URL url;
     private static URI uri;
-    private final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
 
     @Override
     protected Object doInBackground(Object[] objects) {
         url = (URL) objects[0];
         uri = null;
         HttpURLConnection con = null;
-        CacheResponse cache;
+        CacheResponse cache = null;
 
         try {
             uri = new URI(url.toString());
@@ -71,7 +68,17 @@ public class APITask extends AsyncTask {
                     return readData(con.getInputStream());
                 }
             } catch(IOException e) {
-                Log.e("DATA_READ",e.getMessage());
+                Log.e("INTERNET","No internet connection available. Using cached data.");
+                try {
+                    if (HttpResponseCache.getInstalled() != null) {
+                        if (cache != null) {
+                            Log.i("INF", "Reading from cache!");
+                            return readData(cache.getBody());
+                        }
+                    }
+                } catch (IOException ioe) {
+                    Log.e("CACHE","Cached data couldn't be read!");
+                }
             } finally {
                 if (con != null) {
                     con.disconnect();
@@ -86,27 +93,11 @@ public class APITask extends AsyncTask {
         super.onPostExecute(o);
 
         if(o != null) {
-            try {
-                JSONArray arr = new JSONArray(o.toString());
-
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONObject obj = arr.getJSONObject(i);
-
-                    /*Date created = FORMAT.parse(obj.getString("created_at"));
-                    Date updated = FORMAT.parse(obj.getString("updated_at"));
-
-                    obj.put("created_at", new Timestamp(created.getTime()).toString());
-                    obj.put("updated_at", new Timestamp(updated.getTime()).toString());*/
-
-                    events.add(obj);
-                }
-            } catch (JSONException e) {
-                Log.e("JSON", "JSON conversion failed!");
-            }
+            assignData(o.toString());
         }
     }
 
-    private String readData(InputStream in) {
+    protected static String readData(InputStream in) {
         StringBuilder result = new StringBuilder();
         int current;
 
@@ -126,50 +117,77 @@ public class APITask extends AsyncTask {
         return null;
     }
 
-    public static boolean doDelete(JSONObject obj) {
-        MediaType JSON = MediaType.parse("application/json");
-        OkHttpClient client = new OkHttpClient();
-
-        Log.i("DATA",obj.toString());
-        Response response = null;
-
+    protected static void assignData(String o) {
         try {
-            RequestBody body = RequestBody.create(JSON, obj.toString());
-            Request request = new Request.Builder()
-                    .url(new URL(url + "/" + obj.get("id").toString()))
-                    .delete()
-                    .build();
-            response = client.newCall(request).execute();
-            Log.i("INF",response.message());
-            Log.i("INF",String.valueOf(response.code()));
-            response.close();
-            return true;
-        } catch (IOException|JSONException e) {
-            e.printStackTrace();
-        }
+            events.clear();
+            list.clear();
+            JSONArray arr = new JSONArray(o);
 
-        return false;
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                events.add(obj);
+
+                JSONObject reduced = new JSONObject();
+                reduced.put("id",obj.get("id").toString());
+                reduced.put("name",obj.get("name").toString());
+                list.add(reduced);
+            }
+        } catch (JSONException e) {
+            Log.e("JSON", "JSON conversion failed!");
+        }
     }
 
-    public static boolean doAdd(JSONObject obj) {
-
-        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    public static int doDelete(String id) {
         OkHttpClient client = new OkHttpClient();
-        RequestBody body = RequestBody.create(JSON, obj.toString());
-        Response response = null;
-        Request request = new Request.Builder()
-                .url(url)
-                .post(body)
-                .build();
-        try {
-            response = client.newCall(request).execute();
-            Log.i("INF",response.message());
-            response.close();
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        return false;
+        try {
+            Request request = new Request.Builder()
+                    .url(new URL(url + "/" + id))
+                    .delete()
+                    .build();
+            Response response = client.newCall(request).execute();
+            response.close();
+            return 0;
+        } catch (IOException e) {
+            return 1;
+        }
+    }
+
+    public static int doAdd(final JSONObject obj) {
+
+        try {
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+            OkHttpClient client = new OkHttpClient();
+            RequestBody body = RequestBody.create(JSON, obj.toString());
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            if(response.code() != 422) {
+                HttpURLConnection con = null;
+                try {
+                    con = (HttpURLConnection) url.openConnection();
+                    con.connect();
+
+                    assignData(readData(con.getInputStream()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                }
+                response.close();
+                return 0;
+            } else {
+                Log.i("INF",String.valueOf(response.code()));
+                response.close();
+                return 1;
+            }
+        } catch (IOException e) {
+            return 2;
+        }
     }
 }

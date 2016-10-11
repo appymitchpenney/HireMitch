@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class GetEventsActivity extends AppCompatActivity {
-    ListView lstEvents;
+    private ListView lstEvents;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +28,8 @@ public class GetEventsActivity extends AppCompatActivity {
 
         lstEvents = (ListView) findViewById(R.id.lstEvents);
 
-        lstEvents.setAdapter(getList());
+        APITask.adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1,APITask.list);
+        lstEvents.setAdapter(APITask.adapter);
 
         lstEvents.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -40,11 +42,18 @@ public class GetEventsActivity extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             JSONObject obj = (JSONObject) adapterView.getAdapter().getItem(position);
                             try {
-                                //Log.i("DATA",obj.get("id").toString());
                                 for(int i = 0; i < APITask.events.size(); i++) {
-                                    if(APITask.events.get(i).get("id").toString().equalsIgnoreCase(obj.get("id").toString()))
+                                    if(APITask.events.get(i).getString("id").equalsIgnoreCase(obj.get("id").toString()))
                                     {
-                                        APITask.doDelete(APITask.events.get(i));
+                                        int result = APITask.doDelete(APITask.events.get(i).getString("id"));
+                                        if (result == 0) {
+                                            APITask.events.remove(i);
+                                            APITask.list.remove(i);
+                                            GetEventsActivity.updateViews();
+                                            Toast.makeText(getApplicationContext(),"Event Deleted!",Toast.LENGTH_SHORT).show();
+                                        } else if (result ==1) {
+                                            Toast.makeText(getApplicationContext(),"The server cannot be reached. Please try again later...",Toast.LENGTH_SHORT).show();
+                                        }
                                     }
                                 }
                             } catch (JSONException e) {
@@ -56,20 +65,7 @@ public class GetEventsActivity extends AppCompatActivity {
         });
     }
 
-    private ArrayAdapter getList() {
-        List<JSONObject> list = new ArrayList<>();
-        try {
-            for(JSONObject obj : APITask.events) {
-                JSONObject reduced = new JSONObject();
-                reduced.put("id",obj.get("id").toString());
-                reduced.put("name",obj.get("name").toString());
-                list.add(reduced);
-            }
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-        ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1,list);
-        return adapter;
+    public static void updateViews() {
+        APITask.adapter.notifyDataSetChanged();
     }
 }
